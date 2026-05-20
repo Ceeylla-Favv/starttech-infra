@@ -1,0 +1,16 @@
+{
+  "alarms": [
+    {
+      "name": "starttech-cpu-high",
+      "metric": "CPUUtilization",
+      "threshold": 75,
+      "description": "Scale up when CPU > 75%"
+    },
+    {
+      "name": "starttech-5xx-errors",
+      "metric": "HTTPCode_ELB_5XX_Count",
+      "threshold": 10,
+      "description": "Alert on excessive 5XX errors"
+    }
+  ]
+}
