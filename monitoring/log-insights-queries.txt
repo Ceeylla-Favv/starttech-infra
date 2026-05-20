@@ -1,0 +1,15 @@
+# All errors in last hour
+fields @timestamp, @message
+| filter @message like /ERROR/
+| sort @timestamp desc
+| limit 50
+
+# Request count by status per 5 minutes
+fields @timestamp, @message
+| stats count() by bin(5m)
+
+# Slowest responses
+fields @timestamp, @message
+| filter @message like /[0-9]+ms/
+| sort @timestamp desc
+| limit 20
