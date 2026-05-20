@@ -1,0 +1,60 @@
+name: Infrastructure Deploy
+
+on:
+  push:
+    branches: [main]
+    paths: ['terraform/**']
+  workflow_dispatch:
+
+jobs:
+  terraform:
+    name: Terraform Plan and Apply
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.0
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Create tfvars
+        working-directory: terraform
+        run: |
+          cat > terraform.tfvars << TFEOF
+          aws_region           = "${{ secrets.AWS_REGION }}"
+          environment          = "production"
+          app_name             = "starttech"
+          frontend_bucket_name = "${{ secrets.S3_BUCKET_NAME }}"
+          ec2_instance_type    = "t3.micro"
+          ec2_key_name         = "starttech-key"
+          mongo_uri            = "${{ secrets.MONGO_URI }}"
+          asg_min_size         = 1
+          asg_max_size         = 4
+          asg_desired_capacity = 2
+          ecr_repository_url   = "${{ secrets.ECR_REPOSITORY_URL }}"
+          TFEOF
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: terraform init
+
+      - name: Terraform Validate
+        working-directory: terraform
+        run: terraform validate
+
+      - name: Terraform Plan
+        working-directory: terraform
+        run: terraform plan
+
+      - name: Terraform Apply
+        working-directory: terraform
+        if: github.ref == 'refs/heads/main'
+        run: terraform apply -auto-approve
