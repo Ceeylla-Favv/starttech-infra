@@ -57,3 +57,16 @@ variable "ecr_repository_url" {
   description = "ECR repository URL"
   type        = string
 }
+
+variable "jwt_secret_key" {
+  description = "JWT secret key for auth"
+  type        = string
+  sensitive   = true
+  default     = "starttech-super-secret-jwt-key-2024"
+}
+
+variable "allowed_origins" {
+  description = "Allowed CORS origins"
+  type        = string
+  default     = "https://d1nhyre8kou1dm.cloudfront.net"
+}

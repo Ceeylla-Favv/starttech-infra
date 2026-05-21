@@ -40,20 +40,23 @@ resource "aws_iam_instance_profile" "ec2" {
 }
 
 resource "aws_launch_template" "backend" {
-  name_prefix   = "${var.app_name}-backend-"
-  image_id      = data.aws_ami.amazon_linux.id
-  instance_type = var.instance_type
-  key_name      = var.key_name
+  name_prefix            = "${var.app_name}-backend-"
+  image_id               = data.aws_ami.amazon_linux.id
+  instance_type          = var.instance_type
+  key_name               = var.key_name
+  vpc_security_group_ids = [var.backend_sg_id]
 
   iam_instance_profile { name = aws_iam_instance_profile.ec2.name }
-  vpc_security_group_ids = [var.backend_sg_id]
 
   user_data = base64encode(templatefile("${path.module}/user_data.sh", {
     ecr_repository_url = var.ecr_repository_url
     aws_region         = var.aws_region
     mongo_uri          = var.mongo_uri
     redis_host         = var.redis_host
+    redis_port         = var.redis_port
     app_name           = var.app_name
+    jwt_secret_key     = var.jwt_secret_key
+    allowed_origins    = var.allowed_origins
   }))
 
   tag_specifications {
@@ -84,7 +87,7 @@ resource "aws_lb_target_group" "backend" {
     path                = "/health"
     port                = "traffic-port"
     healthy_threshold   = 2
-    unhealthy_threshold = 2
+    unhealthy_threshold = 3
     interval            = 30
     timeout             = 5
     matcher             = "200"
@@ -97,7 +100,6 @@ resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.main.arn
   port              = 80
   protocol          = "HTTP"
-
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.backend.arn
@@ -122,6 +124,13 @@ resource "aws_autoscaling_group" "backend" {
     key                 = "Name"
     value               = "${var.app_name}-backend"
     propagate_at_launch = true
+  }
+
+  instance_refresh {
+    strategy = "Rolling"
+    preferences {
+      min_healthy_percentage = 50
+    }
   }
 }
 

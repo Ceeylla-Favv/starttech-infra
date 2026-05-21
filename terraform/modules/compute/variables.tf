@@ -23,3 +23,12 @@ variable "mongo_uri" {
   type      = string
   sensitive = true
 }
+
+variable "jwt_secret_key" {
+  type      = string
+  sensitive = true
+}
+
+variable "allowed_origins" {
+  type = string
+}

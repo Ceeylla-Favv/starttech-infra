@@ -111,6 +111,8 @@ module "compute" {
   ecr_repository_url   = var.ecr_repository_url
   mongo_uri            = var.mongo_uri
   redis_host           = aws_elasticache_cluster.redis.cache_nodes[0].address
+  jwt_secret_key       = var.jwt_secret_key
+  allowed_origins      = var.allowed_origins
 }
 
 module "monitoring" {

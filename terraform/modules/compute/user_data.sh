@@ -3,25 +3,37 @@ set -e
 
 yum update -y
 yum install -y docker amazon-cloudwatch-agent
-
 systemctl start docker
 systemctl enable docker
 
+# Write env file
+cat > /root/.env << ENVEOF
+MONGO_URI=${mongo_uri}
+DB_NAME=much_todo_db
+REDIS_ADDR=${redis_host}:${redis_port}
+ENABLE_CACHE=false
+JWT_SECRET_KEY=${jwt_secret_key}
+JWT_EXPIRATION_HOURS=72
+PORT=8080
+SECURE_COOKIE=false
+ALLOWED_ORIGINS=${allowed_origins}
+ENVEOF
+
+# Login to ECR and pull image
 aws ecr get-login-password --region ${aws_region} | \
   docker login --username AWS --password-stdin ${ecr_repository_url}
 
 docker pull ${ecr_repository_url}:latest || true
 
+# Run backend container
 docker run -d \
   --name backend \
   --restart always \
   -p 8080:8080 \
-  -e MONGO_URI="${mongo_uri}" \
-  -e REDIS_HOST="${redis_host}" \
-  -e PORT=8080 \
-  -e APP_ENV=production \
+  -v /root/.env:/root/.env \
   ${ecr_repository_url}:latest || true
 
+# Configure CloudWatch agent
 cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json << 'CWEOF'
 {
   "logs": {
