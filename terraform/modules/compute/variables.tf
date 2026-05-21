@@ -12,5 +12,14 @@ variable "asg_min_size"         { type = number }
 variable "asg_max_size"         { type = number }
 variable "asg_desired_capacity" { type = number }
 variable "ecr_repository_url"   { type = string }
-variable "mongo_uri"            { type = string; sensitive = true }
 variable "redis_host"           { type = string }
+
+variable "redis_port" {
+  type    = number
+  default = 6379
+}
+
+variable "mongo_uri" {
+  type      = string
+  sensitive = true
+}
